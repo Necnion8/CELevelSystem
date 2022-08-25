@@ -2,5 +2,5 @@ name: CELevelSystem
 version: '${version}'
 main: com.gmail.necnionch.myplugin.celevelsystem.bukkit.LevelSystemPlugin
 api-version: 1.13
-depend: [ CommandAPI, LuckPerms, N8ChatCaster ]
+depend: [ CommandAPI, N8ChatCaster ]
 authors: [ Necnion8 ]

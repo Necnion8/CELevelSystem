@@ -1,7 +1,7 @@
 package com.gmail.necnionch.myplugin.celevelsystem.bukkit.config;
 
-import com.gmail.necnionch.myplugin.celevelsystem.bukkit.group.Group;
 import com.gmail.necnionch.myplugin.celevelsystem.common.BukkitConfigDriver;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -14,16 +14,18 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class MainConfig extends BukkitConfigDriver {
     private final JavaPlugin plugin;
     private @Nullable BukkitTask saveTask;
-    private final Map<String, Group> groups = Maps.newHashMap();
-    private final Map<UUID, Integer> playerScores = Maps.newHashMap();
+//    private final Map<String, Group> groups = Maps.newHashMap();
+    private final Map<UUID, Integer> playerRemainingScore = Maps.newHashMap();
+    private final Map<UUID, Integer> playerLevels = Maps.newHashMap();
+    private final List<Level> levels = Lists.newArrayList();
+    private double scoreToLevelModifier = 1.5;
 
     public MainConfig(JavaPlugin plugin) {
-        super(plugin, "config.yml", "empty.yml");
+        super(plugin);
         this.plugin = plugin;
     }
 
@@ -34,17 +36,12 @@ public class MainConfig extends BukkitConfigDriver {
             saveTask = null;
         }
         if (super.onLoaded(config)) {
-            groups.clear();
-            playerScores.clear();
-            ConfigurationSection section = config.getConfigurationSection("groups");
-            if (section != null) {
-                for (String groupName : section.getKeys(false)) {
-                    int value = section.getInt(groupName + ".value");
-                    groups.put(groupName, new Group(groupName, value));
-                }
-            }
+            playerRemainingScore.clear();
+            playerLevels.clear();
+            levels.clear();
+            scoreToLevelModifier = config.getDouble("score-to-level-modifier", 1.5);
 
-            section = config.getConfigurationSection("scores");
+            ConfigurationSection section = config.getConfigurationSection("players");
             if (section != null) {
                 for (String uuidStr : section.getKeys(false)) {
                     UUID uuid;
@@ -55,10 +52,28 @@ public class MainConfig extends BukkitConfigDriver {
                         continue;
                     }
 
-                    int score = section.getInt(uuidStr);
-                    playerScores.put(uuid, score);
+                    int remaining = section.getInt(uuidStr + ".remaining", 0);
+                    int level = section.getInt(uuidStr + ".level", 0);
+                    playerRemainingScore.put(uuid, remaining);
+                    playerLevels.put(uuid, level);
                 }
             }
+
+            section = config.getConfigurationSection("levels");
+            if (section != null) {
+                for (String levelStr : section.getKeys(false)) {
+                    int level;
+                    try {
+                        level = Integer.parseInt(levelStr);
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                    Level levelEntry = new Level(level, section.getString(levelStr + ".format", ""));
+                    levels.add(levelEntry);
+                }
+                levels.sort(Comparator.comparingInt(Level::getLevel).reversed());
+            }
+
             return true;
         }
         return false;
@@ -70,59 +85,66 @@ public class MainConfig extends BukkitConfigDriver {
             saveTask.cancel();
             saveTask = null;
         }
+
         config = new YamlConfiguration();
-        groups.values().forEach(group -> {
-            config.set("groups." + group.getGroupName() + ".value", group.getValue());
+
+        playerRemainingScore.forEach((uuid, score) -> {
+            config.set("players." + uuid.toString() + ".remaining", score);
         });
-        playerScores.forEach((uuid, score) -> {
-            config.set("scores." + uuid.toString(), score);
+        playerLevels.forEach((uuid, level) -> {
+            config.set("players." + uuid.toString() + ".level", level);
+        });
+        levels.forEach((level) -> {
+            config.set("levels." + level + ".format", level.getChatFormat());
         });
         return super.save();
     }
 
-    public Map<String, Group> groups() {
-        return groups;
+
+    public int getPlayerRemaining(UUID player) {
+        return playerRemainingScore.getOrDefault(player, 0);
     }
 
-    public @Nullable Group getGroupByValue(int value) {
-        List<Group> sorted = groups.values().stream().sorted(Comparator.comparingInt(Group::getValue).reversed()).collect(Collectors.toList());
-        for (Group group : sorted) {
-            if (group.getValue() <= value)
-                return group;
-        }
-        return null;
-    }
-
-    public @Nullable Group getGroupByName(String groupName) {
-        return groups.get(groupName);
-    }
-
-
-    public int getPlayerScore(UUID player) {
-        return playerScores.getOrDefault(player, 0);
-    }
-
-    public int setPlayerScore(UUID player, int score) {
-        playerScores.put(player, score);
+    public int setPlayerRemaining(UUID player, int score) {
+        playerRemainingScore.put(player, score);
         queue();
         return score;
     }
 
-    public int addPlayerScore(UUID player, int score) {
-        int newValue = Math.max(0, playerScores.getOrDefault(player, 0)) + Math.max(0, score);
-        playerScores.put(player, newValue);
-        queue();
-        return newValue;
+    public int getPlayerLevel(UUID player) {
+        return playerLevels.getOrDefault(player, 0);
     }
 
-    public int resetPlayerScore(UUID player) {
-        playerScores.remove(player);
+    public int setPlayerLevel(UUID player, int level) {
+        playerLevels.put(player, level);
         queue();
-        return 0;
+        return level;
     }
 
     public Map<UUID, Integer> playerScores() {
-        return playerScores;
+        return playerRemainingScore;
+    }
+
+    public Map<UUID, Integer> playerLevels() {
+        return playerLevels;
+    }
+
+
+    public double getScoreToLevelModifier() {
+        return scoreToLevelModifier;
+    }
+
+    public void setScoreToLevelModifier(double modifier) {
+        this.scoreToLevelModifier = modifier;
+        save();
+    }
+
+    public @Nullable Level getLevelConfigByLevel(int level) {
+        for (Level levelEntry : levels) {
+            if (levelEntry.getLevel() <= level)
+                return levelEntry;
+        }
+        return null;
     }
 
     private void queue() {

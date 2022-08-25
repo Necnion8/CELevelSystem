@@ -1,0 +1,11 @@
+
+# (currentLevel) * (scoreToLevelModifier) => nextLevelRemainingScore
+score-to-level-modifier: 1.5
+
+levels:
+  "1":
+    format: "&7[Lv.{level}]&r"
+  "10":
+    format: "&e[Lv.{level}]&r"
+  "20":
+    format: "&6[Lv.{level}]&r"
