@@ -22,6 +22,7 @@ public class MainConfig extends BukkitConfigDriver {
     private final Map<UUID, Integer> playerRemainingScore = Maps.newHashMap();
     private final Map<UUID, Integer> playerLevels = Maps.newHashMap();
     private final List<Level> levels = Lists.newArrayList();
+    private int levelBaseScore = 3;
     private double scoreToLevelModifier = 1.5;
 
     public MainConfig(JavaPlugin plugin) {
@@ -40,6 +41,7 @@ public class MainConfig extends BukkitConfigDriver {
             playerLevels.clear();
             levels.clear();
             scoreToLevelModifier = config.getDouble("score-to-level-modifier", 1.5);
+            levelBaseScore = config.getInt("level-base-score", 3);
 
             ConfigurationSection section = config.getConfigurationSection("players");
             if (section != null) {
@@ -95,7 +97,7 @@ public class MainConfig extends BukkitConfigDriver {
             config.set("players." + uuid.toString() + ".level", level);
         });
         levels.forEach((level) -> {
-            config.set("levels." + level + ".format", level.getChatFormat());
+            config.set("levels." + level.getLevel() + ".format", level.getChatFormat());
         });
         return super.save();
     }
@@ -112,7 +114,7 @@ public class MainConfig extends BukkitConfigDriver {
     }
 
     public int getPlayerLevel(UUID player) {
-        return playerLevels.getOrDefault(player, 0);
+        return Math.max(1, playerLevels.getOrDefault(player, 1));
     }
 
     public int setPlayerLevel(UUID player, int level) {
@@ -136,6 +138,15 @@ public class MainConfig extends BukkitConfigDriver {
 
     public void setScoreToLevelModifier(double modifier) {
         this.scoreToLevelModifier = modifier;
+        save();
+    }
+
+    public int getLevelBaseScore() {
+        return levelBaseScore;
+    }
+
+    public void setLevelBaseScore(int levelBaseScore) {
+        this.levelBaseScore = levelBaseScore;
         save();
     }
 

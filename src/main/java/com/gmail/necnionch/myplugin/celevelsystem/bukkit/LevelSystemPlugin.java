@@ -64,14 +64,14 @@ public final class LevelSystemPlugin extends JavaPlugin implements Listener {
 
         String formatted = "";
         if (setting != null) {
-            formatted = ChatColor.translateAlternateColorCodes('&', setting.getChatFormat().replace("\\{level}", "" + level));
+            formatted = ChatColor.translateAlternateColorCodes('&', setting.getChatFormat().replace("{level}", "" + level));
         }
         event.getValues().put("levelsystem", formatted);
     }
 
     public int remainingScore(int currentLevel) {
         double modifier = mainConfig.getScoreToLevelModifier();
-        return (int) (currentLevel * modifier);
+        return Math.max(mainConfig.getLevelBaseScore(), (int) (currentLevel * modifier));
     }
 
     public void changeScore(Player player, int added) {
