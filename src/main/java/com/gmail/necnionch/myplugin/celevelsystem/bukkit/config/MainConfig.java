@@ -90,6 +90,9 @@ public class MainConfig extends BukkitConfigDriver {
 
         config = new YamlConfiguration();
 
+        config.set("score-to-level-modifier", scoreToLevelModifier);
+        config.set("level-base-score", levelBaseScore);
+
         playerRemainingScore.forEach((uuid, score) -> {
             config.set("players." + uuid.toString() + ".remaining", score);
         });
