@@ -4,6 +4,7 @@ import com.gmail.necnionch.myplugin.celevelsystem.bukkit.config.Level;
 import com.gmail.necnionch.myplugin.celevelsystem.bukkit.config.MainConfig;
 import com.gmail.necnionch.myplugin.n8chatcaster.bukkit.events.ChatFormatProcessEvent;
 import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.arguments.EntitySelector;
 import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import org.bukkit.ChatColor;
@@ -13,6 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Collection;
 import java.util.List;
 
 public final class LevelSystemPlugin extends JavaPlugin implements Listener {
@@ -26,21 +28,21 @@ public final class LevelSystemPlugin extends JavaPlugin implements Listener {
         new CommandAPICommand("celvlsys")
                 .withPermission("celevelsystem.command.celvlsys")
                 .withSubcommand(new CommandAPICommand("setlevel")
-                        .withArguments(new EntitySelectorArgument("players", EntitySelectorArgument.EntitySelector.MANY_PLAYERS))
+                        .withArguments(new EntitySelectorArgument<Collection<Player>>("players", EntitySelector.MANY_PLAYERS))
                         .withArguments(new IntegerArgument("level"))
                         .executes(this::execSetLevel)
                 )
                 .withSubcommand(new CommandAPICommand("getlevel")
-                        .withArguments(new EntitySelectorArgument("players", EntitySelectorArgument.EntitySelector.ONE_PLAYER))
+                        .withArguments(new EntitySelectorArgument<Player>("players", EntitySelector.ONE_PLAYER))
                         .executes(this::execGetLevel)
                 )
                 .withSubcommand(new CommandAPICommand("addscore")
-                        .withArguments(new EntitySelectorArgument("players", EntitySelectorArgument.EntitySelector.MANY_PLAYERS))
+                        .withArguments(new EntitySelectorArgument<Collection<Player>>("players", EntitySelector.MANY_PLAYERS))
                         .withArguments(new IntegerArgument("value"))
                         .executes(this::execAddScore)
                 )
                 .withSubcommand(new CommandAPICommand("getscore")
-                        .withArguments(new EntitySelectorArgument("players", EntitySelectorArgument.EntitySelector.ONE_PLAYER))
+                        .withArguments(new EntitySelectorArgument<Player>("players", EntitySelector.ONE_PLAYER))
                         .executes(this::execGetScore)
                 )
                 .withSubcommand(new CommandAPICommand("reload")
